@@ -57,7 +57,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/SuperJson.git
+git clone https://github.com/hiduhong/SuperJson.git
 
 # 进入目录
 cd SuperJson
