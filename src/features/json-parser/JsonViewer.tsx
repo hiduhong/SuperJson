@@ -1,5 +1,5 @@
 import React from "react";
-import ReactJson from "react-json-view";
+import JsonView from "@uiw/react-json-view";
 import { XCircle } from "lucide-react";
 import { cn } from "../../utils/cn";
 import type { JsonValue } from "../../utils/jsonExtractor";
@@ -15,8 +15,25 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
   error,
   className,
 }) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const dataList: any[] = data;
+  const dataList: JsonValue[] = data;
+  const jsonViewStyle = {
+    "--w-rjv-background-color": "transparent",
+    "--w-rjv-font-family": "monospace",
+    "--w-rjv-font-size": "14px",
+    "--w-rjv-color": "#d4d4d8",
+    "--w-rjv-key-string": "#93c5fd",
+    "--w-rjv-type-string-color": "#a7f3d0",
+    "--w-rjv-type-int-color": "#fca5a5",
+    "--w-rjv-type-float-color": "#fca5a5",
+    "--w-rjv-type-boolean-color": "#fde68a",
+    "--w-rjv-type-null-color": "#fca5a5",
+    "--w-rjv-line-color": "#27272a",
+    "--w-rjv-arrow-color": "#71717a",
+    "--w-rjv-info-color": "#52525b",
+    "--w-rjv-update-color": "#67e8f9",
+    "--w-rjv-copied-color": "#a7f3d0",
+    "--w-rjv-copied-success-color": "#34d399"
+  } as React.CSSProperties;
 
   return (
     <div className={cn("flex flex-col h-full bg-zinc-900", className)}>
@@ -35,7 +52,9 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
           </div>
         ) : dataList.length > 0 ? (
           <div className="space-y-4">
-            {dataList.map((item, index) => (
+            {dataList.map((item, index) => {
+              const value = item !== null && typeof item === "object" ? item : { value: item };
+              return (
               <div key={index}>
                 {dataList.length > 1 && index >= 0 && (
                   <div className="flex items-center py-4">
@@ -44,18 +63,14 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
                     <div className="flex-grow border-t border-dashed border-zinc-700"></div>
                   </div>
                 )}
-                <ReactJson
-                  src={item}
-                  theme="twilight"
-                  displayDataTypes={false}
-                  displayObjectSize={true}
-                  enableClipboard={true}
-                  style={{ backgroundColor: 'transparent', fontSize: '14px', fontFamily: 'monospace' }}
+                <JsonView
+                  value={value}
                   collapsed={2}
-                  name={false}
+                  style={jsonViewStyle}
                 />
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-zinc-500">

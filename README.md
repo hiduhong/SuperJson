@@ -78,7 +78,7 @@ npm run dev
 3) 构建工具： [Vite](https://vitejs.dev/)
 4) 样式： [Tailwind CSS](https://tailwindcss.com/)
 5) 图标： [Lucide React](https://lucide.dev/)
-6) JSON 查看器： [react-json-view](https://github.com/mac-s-g/react-json-view)
+6) JSON 查看器： [@uiw/react-json-view](https://github.com/uiwjs/react-json-view)
 7) 分割布局： [react-split](https://github.com/nathancahill/react-split)
 
 ## 🤝 贡献 | Contribution

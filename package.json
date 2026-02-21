@@ -10,11 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@uiw/react-json-view": "^2.0.0-alpha.41",
     "clsx": "^2.1.1",
     "lucide-react": "^0.575.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-json-view": "^1.21.3",
     "react-split": "^2.0.14",
     "tailwind-merge": "^3.5.0"
   },
