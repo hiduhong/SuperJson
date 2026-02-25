@@ -5,6 +5,9 @@ import { cn } from "../../utils/cn";
 import type { ExtractedJsonSegment, JsonValue } from "../../utils/jsonExtractor";
 import { LogText } from "./LogText";
 import { useViewerSearch } from "../../hooks/useViewerSearch";
+import { BreadcrumbBar } from "../../components/json-viewer/BreadcrumbBar";
+import { useBreadcrumb } from "../../hooks/useBreadcrumb";
+import { useJsonPathRenderers } from "../../hooks/useJsonPathRenderers";
 
 interface JsonViewerProps {
   data: JsonValue[];
@@ -32,6 +35,8 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
     scrollToMatch,
     shouldExpandNodeInitially
   } = useViewerSearch({ data, sourceText, segments });
+  const { breadcrumb, breadcrumbCopied, handleClickBreadcrumb, handleCopyBreadcrumb } = useBreadcrumb(viewerRef);
+  const { renderKeyName, renderRow, renderBraceRight, renderBracketsRight } = useJsonPathRenderers();
   const jsonViewStyle = {
     "--w-rjv-background-color": "transparent",
     "--w-rjv-font-family": "monospace",
@@ -97,7 +102,16 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
           </div>
         </div>
       </div>
-      <div ref={viewerRef} className="flex-1 overflow-auto p-4 bg-slate-100 relative">
+      <BreadcrumbBar
+        breadcrumb={breadcrumb}
+        breadcrumbCopied={breadcrumbCopied}
+        onCopy={handleCopyBreadcrumb}
+      />
+      <div
+        ref={viewerRef}
+        className="flex-1 overflow-auto p-4 bg-slate-100 relative"
+        onClick={handleClickBreadcrumb}
+      >
         {error ? (
           <div className="flex flex-col items-center justify-center h-full text-rose-600">
             <XCircle className="w-12 h-12 mb-4" />
@@ -157,7 +171,12 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
                       style={jsonViewStyle}
                       displayDataTypes={false}
                       enableClipboard={false}
-                    />
+                    >
+                      <JsonView.KeyName render={renderKeyName} />
+                      <JsonView.Row render={renderRow} />
+                      <JsonView.BraceRight render={renderBraceRight} />
+                      <JsonView.BracketsRight render={renderBracketsRight} />
+                    </JsonView>
                   </div>
                 );
               });
@@ -176,7 +195,12 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
                   style={jsonViewStyle}
                   displayDataTypes={false}
                   enableClipboard={false}
-                />
+                >
+                  <JsonView.KeyName render={renderKeyName} />
+                  <JsonView.Row render={renderRow} />
+                  <JsonView.BraceRight render={renderBraceRight} />
+                  <JsonView.BracketsRight render={renderBracketsRight} />
+                </JsonView>
               </div>
               );
             })}
