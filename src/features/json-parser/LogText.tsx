@@ -4,7 +4,7 @@ interface LogTextProps {
   text: string;
 }
 
-const logPattern = /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?<level>[A-Z]+)\s+\[(?<thread>[^\]]+)\]\s+\[(?<trace>TraceId:\s*[^\]]+)\]\s+(?<logger>[^:]+?)\s*:?\s*(?<message>.*)$/;
+const logPattern = /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?<level>[A-Z]+)\s+\[(?<thread>[^\]]+)\]\s+\[(?<trace>TraceId:\s*[^\]]+)\]\s+(?<logger>[^:]+?)\s*:\s*(?<message>.*)$/;
 
 const getLevelClass = (level: string) => {
   switch (level) {
