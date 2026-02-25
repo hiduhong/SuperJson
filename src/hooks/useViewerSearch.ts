@@ -12,6 +12,8 @@ export const useViewerSearch = ({ data, sourceText, segments }: UseViewerSearchO
   const [searchText, setSearchText] = React.useState("");
   const [matchCount, setMatchCount] = React.useState(0);
   const [activeMatchIndex, setActiveMatchIndex] = React.useState(0);
+  const [matchItems, setMatchItems] = React.useState<Array<{ index: number; label: string; copy: string; preview: string }>>([]);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
   const viewerRef = React.useRef<HTMLDivElement>(null);
   const normalizedQuery = searchText.trim().toLowerCase();
   const highlightStateRef = React.useRef({ applying: false });
@@ -103,6 +105,18 @@ export const useViewerSearch = ({ data, sourceText, segments }: UseViewerSearchO
     setActiveMatch(index, true);
   }, [setActiveMatch]);
 
+  const handleViewerKeyDown = React.useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!(event.metaKey || event.ctrlKey)) {
+      return;
+    }
+    if (event.key.toLowerCase() !== "f") {
+      return;
+    }
+    event.preventDefault();
+    searchInputRef.current?.focus();
+    searchInputRef.current?.select();
+  }, []);
+
   const applyHighlights = React.useCallback(() => {
     const container = viewerRef.current;
     if (!container) {
@@ -125,6 +139,7 @@ export const useViewerSearch = ({ data, sourceText, segments }: UseViewerSearchO
     if (!query) {
       setMatchCount(0);
       setActiveMatchIndex(0);
+      setMatchItems([]);
       highlightStateRef.current.applying = false;
       return;
     }
@@ -174,6 +189,15 @@ export const useViewerSearch = ({ data, sourceText, segments }: UseViewerSearchO
     });
     const matches = Array.from(container.querySelectorAll("mark[data-jsonviewer-highlight='true']"));
     setMatchCount(matches.length);
+    const items = matches.map((match, index) => {
+      const containerElement = match.closest("[data-jsonviewer-path]") as HTMLElement | null;
+      const label = containerElement?.getAttribute("data-jsonviewer-path") ?? "";
+      const copy = containerElement?.getAttribute("data-jsonviewer-copy") ?? label;
+      const previewSource = containerElement?.textContent ?? match.textContent ?? "";
+      const preview = previewSource.replace(/\s+/g, " ").trim();
+      return { index, label, copy, preview };
+    });
+    setMatchItems(items);
     if (matches.length) {
       const nextIndex = Math.min(activeMatchRef.current, matches.length - 1);
       const shouldScroll = pendingScrollRef.current;
@@ -228,10 +252,13 @@ export const useViewerSearch = ({ data, sourceText, segments }: UseViewerSearchO
     viewerRef,
     searchText,
     setSearchText,
+    searchInputRef,
     matchCount,
     activeMatchIndex,
+    matchItems,
     normalizedQuery,
     scrollToMatch,
+    handleViewerKeyDown,
     shouldExpandNodeInitially
   };
 };

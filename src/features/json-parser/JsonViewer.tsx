@@ -6,6 +6,7 @@ import type { ExtractedJsonSegment, JsonValue } from "../../utils/jsonExtractor"
 import { LogText } from "./LogText";
 import { useViewerSearch } from "../../hooks/useViewerSearch";
 import { BreadcrumbBar } from "../../components/json-viewer/BreadcrumbBar";
+import { SearchResultPanel } from "../../components/json-viewer/SearchResultPanel";
 import { useBreadcrumb } from "../../hooks/useBreadcrumb";
 import { useJsonPathRenderers } from "../../hooks/useJsonPathRenderers";
 
@@ -29,13 +30,16 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
     viewerRef,
     searchText,
     setSearchText,
+    searchInputRef,
     matchCount,
     activeMatchIndex,
+    matchItems,
     normalizedQuery,
     scrollToMatch,
+    handleViewerKeyDown,
     shouldExpandNodeInitially
   } = useViewerSearch({ data, sourceText, segments });
-  const { breadcrumb, breadcrumbCopied, handleClickBreadcrumb, handleCopyBreadcrumb } = useBreadcrumb(viewerRef);
+  const { breadcrumb, breadcrumbCopied, handleClickBreadcrumb, handleCopyBreadcrumb, setBreadcrumbFromPath } = useBreadcrumb(viewerRef);
   const { renderKeyName, renderRow, renderBraceRight, renderBracketsRight } = useJsonPathRenderers();
   const jsonViewStyle = {
     "--w-rjv-background-color": "transparent",
@@ -69,6 +73,7 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="Search in viewer"
+              ref={searchInputRef}
               className="pl-8 pr-7 py-1.5 text-xs rounded-md border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-400/50"
             />
             {searchText ? (
@@ -107,10 +112,22 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
         breadcrumbCopied={breadcrumbCopied}
         onCopy={handleCopyBreadcrumb}
       />
+      <SearchResultPanel
+        visible={Boolean(normalizedQuery)}
+        matchCount={matchCount}
+        activeMatchIndex={activeMatchIndex}
+        items={matchItems}
+        onSelect={(item) => {
+          scrollToMatch(item.index);
+          setBreadcrumbFromPath(item.label, item.copy);
+        }}
+      />
       <div
         ref={viewerRef}
         className="flex-1 overflow-auto p-4 bg-slate-100 relative"
         onClick={handleClickBreadcrumb}
+        onKeyDown={handleViewerKeyDown}
+        tabIndex={0}
       >
         {error ? (
           <div className="flex flex-col items-center justify-center h-full text-rose-600">

@@ -46,5 +46,12 @@ export const useBreadcrumb = (viewerRef: React.RefObject<HTMLDivElement | null>)
       setBreadcrumbCopied(false);
     }, 2000);
   }, [breadcrumb]);
-  return { breadcrumb, breadcrumbCopied, handleClickBreadcrumb, handleCopyBreadcrumb };
+  const setBreadcrumbFromPath = React.useCallback((label: string, copy?: string) => {
+    if (!label) {
+      setBreadcrumb({ label: "", copy: "" });
+      return;
+    }
+    setBreadcrumb({ label, copy: copy ?? label });
+  }, []);
+  return { breadcrumb, breadcrumbCopied, handleClickBreadcrumb, handleCopyBreadcrumb, setBreadcrumbFromPath };
 };
