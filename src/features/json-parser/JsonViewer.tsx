@@ -30,7 +30,7 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
   const pendingScrollRef = React.useRef(false);
   const renderLogText = (text: string) => {
     const lines = text.split(/\n/);
-    const logPattern = /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?<level>[A-Z]+)\s+\[(?<thread>[^\]]+)\]\s+\[(?<trace>TraceId:\s*[^\]]+)\]\s+(?<logger>[^:]+)\s+:\s+(?<message>.*)$/;
+    const logPattern = /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?<level>[A-Z]+)\s+\[(?<thread>[^\]]+)\]\s+\[(?<trace>TraceId:\s*[^\]]+)\]\s+(?<logger>[^:]+?)\s*:?\s*(?<message>.*)$/;
     const getLevelClass = (level: string) => {
       switch (level) {
         case "ERROR":
@@ -49,13 +49,16 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
       }
     };
     const renderLine = (line: string) => {
-      const match = line.match(logPattern);
+      const trimmedLine = line.replace(/^\s+/, "");
+      const leading = line.slice(0, line.length - trimmedLine.length);
+      const match = trimmedLine.match(logPattern);
       if (!match?.groups) {
         return <span className="text-slate-500">{line || "\u00A0"}</span>;
       }
       const { timestamp, level, thread, trace, logger, message } = match.groups as Record<string, string>;
       return (
         <>
+          {leading ? <span className="text-slate-500">{leading}</span> : null}
           <span className="text-slate-500">{timestamp}</span>
           <span> </span>
           <span className={getLevelClass(level)}>{level}</span>
