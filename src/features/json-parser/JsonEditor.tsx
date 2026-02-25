@@ -1,14 +1,11 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Button } from "../../components/ui/Button";
-import { Trash2, FileJson, Copy, FileCode } from "lucide-react";
+import { Trash2, Copy, FileCode } from "lucide-react";
 import { cn } from "../../utils/cn";
 
 interface JsonEditorProps {
   value: string;
   onChange: (value: string) => void;
-  onFormat?: () => void;
-  isSmartExtract?: boolean;
-  onToggleSmartExtract?: () => void;
   onLoadSample?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -18,9 +15,6 @@ interface JsonEditorProps {
 export const JsonEditor: React.FC<JsonEditorProps> = ({
   value,
   onChange,
-  onFormat,
-  isSmartExtract,
-  onToggleSmartExtract,
   onLoadSample,
   onUndo,
   onRedo,
@@ -87,23 +81,6 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
           <Button variant="ghost" size="sm" onClick={handleCopy} title="Copy">
             <Copy className="w-4 h-4" />
           </Button>
-          {onFormat && (
-            <Button variant="secondary" size="sm" onClick={onFormat}>
-              <FileJson className="w-4 h-4 mr-2" />
-              Format
-            </Button>
-          )}
-           {onToggleSmartExtract && (
-            <label className="flex items-center space-x-2 cursor-pointer select-none">
-              <input 
-                type="checkbox" 
-                checked={isSmartExtract} 
-                onChange={onToggleSmartExtract}
-                className="w-4 h-4 rounded border-slate-300 bg-white text-indigo-600 focus:ring-indigo-400/50"
-              />
-              <span className="text-xs font-medium text-slate-600">Smart Extract</span>
-            </label>
-          )}
         </div>
       </div>
       <div className="flex-1 relative">
