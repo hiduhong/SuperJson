@@ -30,6 +30,8 @@
 
 ## 📖 简介 | Introduction
 
+在线体验地址： https://superjson.duhong.dev/
+
 **SuperJson** 是一款专为开发者设计的 JSON 处理工具。它不仅是一个格式化器，更是一个能够从混乱的日志、报错信息或混合文本中**智能提取**有效 JSON 的神器。无论你的 JSON 被转义了多少次，或者隐藏在多深的结构中，SuperJson 都能帮你一键还原。
 
 ## ✨ 核心特性 | Features

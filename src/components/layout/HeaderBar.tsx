@@ -16,7 +16,13 @@ export const HeaderBar = () => {
         </span>
             </div>
             <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="sm">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open("https://github.com/hiduhong/SuperJson", "_blank", "noopener,noreferrer")}
+                    aria-label="GitHub"
+                    title="GitHub"
+                >
                     <Github className="w-5 h-5" />
                 </Button>
                 <Button variant="ghost" size="sm">

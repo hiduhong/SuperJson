@@ -60,7 +60,7 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
           <div className="relative flex items-center gap-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-2 top-1/2 -translate-y-1/2" />
             <input
-              type="search"
+              type="text"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               placeholder="Search in viewer"
