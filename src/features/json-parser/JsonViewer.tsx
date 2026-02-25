@@ -1,8 +1,10 @@
 import React from "react";
-import JsonView, { type ShouldExpandNodeInitially } from "@uiw/react-json-view";
+import JsonView from "@uiw/react-json-view";
 import { ChevronDown, ChevronUp, Search, X, XCircle } from "lucide-react";
 import { cn } from "../../utils/cn";
 import type { ExtractedJsonSegment, JsonValue } from "../../utils/jsonExtractor";
+import { LogText } from "./LogText";
+import { useViewerSearch } from "../../hooks/useViewerSearch";
 
 interface JsonViewerProps {
   data: JsonValue[];
@@ -20,70 +22,16 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
   className,
 }) => {
   const dataList: JsonValue[] = data;
-  const [searchText, setSearchText] = React.useState("");
-  const [matchCount, setMatchCount] = React.useState(0);
-  const [activeMatchIndex, setActiveMatchIndex] = React.useState(0);
-  const viewerRef = React.useRef<HTMLDivElement>(null);
-  const normalizedQuery = searchText.trim().toLowerCase();
-  const highlightStateRef = React.useRef({ applying: false });
-  const activeMatchRef = React.useRef(0);
-  const pendingScrollRef = React.useRef(false);
-  const renderLogText = (text: string) => {
-    const lines = text.split(/\n/);
-    const logPattern = /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\s+(?<level>[A-Z]+)\s+\[(?<thread>[^\]]+)\]\s+\[(?<trace>TraceId:\s*[^\]]+)\]\s+(?<logger>[^:]+?)\s*:?\s*(?<message>.*)$/;
-    const getLevelClass = (level: string) => {
-      switch (level) {
-        case "ERROR":
-          return "text-rose-600";
-        case "WARN":
-        case "WARNING":
-          return "text-amber-600";
-        case "INFO":
-          return "text-indigo-600";
-        case "DEBUG":
-          return "text-sky-600";
-        case "TRACE":
-          return "text-violet-600";
-        default:
-          return "text-slate-500";
-      }
-    };
-    const renderLine = (line: string) => {
-      const trimmedLine = line.replace(/^\s+/, "");
-      const leading = line.slice(0, line.length - trimmedLine.length);
-      const match = trimmedLine.match(logPattern);
-      if (!match?.groups) {
-        return <span className="text-slate-500">{line || "\u00A0"}</span>;
-      }
-      const { timestamp, level, thread, trace, logger, message } = match.groups as Record<string, string>;
-      return (
-        <>
-          {leading ? <span className="text-slate-500">{leading}</span> : null}
-          <span className="text-slate-500">{timestamp}</span>
-          <span> </span>
-          <span className={getLevelClass(level)}>{level}</span>
-          <span> </span>
-          <span className="text-cyan-600">[{thread}]</span>
-          <span> </span>
-          <span className="text-amber-600">[{trace}]</span>
-          <span> </span>
-          <span className="text-indigo-700">{logger}</span>
-          <span className="text-slate-500"> :</span>
-          <span> </span>
-          <span className="text-slate-800">{message || "\u00A0"}</span>
-        </>
-      );
-    };
-    return (
-      <div className="space-y-1">
-        {lines.map((line, index) => (
-          <div key={`line-${index}`} className="text-xs font-mono whitespace-pre-wrap">
-            {renderLine(line)}
-          </div>
-        ))}
-      </div>
-    );
-  };
+  const {
+    viewerRef,
+    searchText,
+    setSearchText,
+    matchCount,
+    activeMatchIndex,
+    normalizedQuery,
+    scrollToMatch,
+    shouldExpandNodeInitially
+  } = useViewerSearch({ data, sourceText, segments });
   const jsonViewStyle = {
     "--w-rjv-background-color": "transparent",
     "--w-rjv-font-family": "monospace",
@@ -103,210 +51,6 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
     "--w-rjv-copied-success-color": "#22c55e"
   } as React.CSSProperties;
 
-  const valueContainsQuery = React.useCallback((value: unknown) => {
-    if (!normalizedQuery) {
-      return false;
-    }
-    const stack: unknown[] = [value];
-    while (stack.length) {
-      const current = stack.pop();
-      if (current === null || current === undefined) {
-        if (String(current).toLowerCase().includes(normalizedQuery)) {
-          return true;
-        }
-        continue;
-      }
-      if (typeof current === "string" || typeof current === "number" || typeof current === "boolean" || typeof current === "bigint") {
-        if (String(current).toLowerCase().includes(normalizedQuery)) {
-          return true;
-        }
-        continue;
-      }
-      if (current instanceof Date) {
-        if (current.toISOString().toLowerCase().includes(normalizedQuery)) {
-          return true;
-        }
-        continue;
-      }
-      if (Array.isArray(current)) {
-        for (let index = current.length - 1; index >= 0; index -= 1) {
-          stack.push(current[index]);
-        }
-        continue;
-      }
-      if (typeof current === "object") {
-        const entries = Object.entries(current as Record<string, unknown>);
-        for (let index = entries.length - 1; index >= 0; index -= 1) {
-          const [key, val] = entries[index];
-          if (key.toLowerCase().includes(normalizedQuery)) {
-            return true;
-          }
-          stack.push(val);
-        }
-      }
-    }
-    return false;
-  }, [normalizedQuery]);
-
-  const shouldExpandNodeInitially = React.useCallback<ShouldExpandNodeInitially<object>>((_isExpanded, props) => {
-    if (!normalizedQuery) {
-      return props.level <= 2;
-    }
-    if (props.keyName !== undefined && String(props.keyName).toLowerCase().includes(normalizedQuery)) {
-      return true;
-    }
-    return props.level <= 2 || valueContainsQuery(props.value);
-  }, [normalizedQuery, valueContainsQuery]);
-
-  const setActiveMatch = React.useCallback((index: number, shouldScroll: boolean) => {
-    const container = viewerRef.current;
-    if (!container) {
-      return;
-    }
-    const matches = Array.from(
-      container.querySelectorAll("mark[data-jsonviewer-highlight='true']")
-    ) as HTMLElement[];
-    if (!matches.length) {
-      return;
-    }
-    const safeIndex = ((index % matches.length) + matches.length) % matches.length;
-    matches.forEach((match, idx) => {
-      if (idx === safeIndex) {
-        match.classList.add("bg-amber-300");
-      } else {
-        match.classList.remove("bg-amber-300");
-      }
-    });
-    if (shouldScroll) {
-      matches[safeIndex].scrollIntoView({ block: "center", behavior: "smooth" });
-    }
-    setActiveMatchIndex(safeIndex);
-    activeMatchRef.current = safeIndex;
-  }, []);
-  const scrollToMatch = React.useCallback((index: number) => {
-    setActiveMatch(index, true);
-  }, [setActiveMatch]);
-
-  const applyHighlights = React.useCallback(() => {
-    const container = viewerRef.current;
-    if (!container) {
-      return;
-    }
-    if (highlightStateRef.current.applying) {
-      return;
-    }
-    highlightStateRef.current.applying = true;
-    const query = normalizedQuery;
-    const marks = Array.from(container.querySelectorAll("mark[data-jsonviewer-highlight='true']"));
-    marks.forEach((mark) => {
-      const parent = mark.parentNode;
-      if (!parent) {
-        return;
-      }
-      parent.replaceChild(document.createTextNode(mark.textContent ?? ""), mark);
-      parent.normalize();
-    });
-    if (!query) {
-      setMatchCount(0);
-      setActiveMatchIndex(0);
-      highlightStateRef.current.applying = false;
-      return;
-    }
-    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
-      acceptNode: (node) => {
-        if (!node.nodeValue) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        if (!node.nodeValue.toLowerCase().includes(query)) {
-          return NodeFilter.FILTER_REJECT;
-        }
-        return NodeFilter.FILTER_ACCEPT;
-      }
-    });
-    const nodes: Text[] = [];
-    let current = walker.nextNode();
-    while (current) {
-      nodes.push(current as Text);
-      current = walker.nextNode();
-    }
-    nodes.forEach((node) => {
-      const text = node.nodeValue ?? "";
-      const lowerText = text.toLowerCase();
-      let startIndex = 0;
-      const fragment = document.createDocumentFragment();
-      while (true) {
-        const matchIndex = lowerText.indexOf(query, startIndex);
-        if (matchIndex === -1) {
-          const tail = text.slice(startIndex);
-          if (tail) {
-            fragment.appendChild(document.createTextNode(tail));
-          }
-          break;
-        }
-        const head = text.slice(startIndex, matchIndex);
-        if (head) {
-          fragment.appendChild(document.createTextNode(head));
-        }
-        const mark = document.createElement("mark");
-        mark.setAttribute("data-jsonviewer-highlight", "true");
-        mark.className = "bg-amber-200 text-slate-900 rounded-sm px-0.5 transition-colors";
-        mark.textContent = text.slice(matchIndex, matchIndex + query.length);
-        fragment.appendChild(mark);
-        startIndex = matchIndex + query.length;
-      }
-      node.parentNode?.replaceChild(fragment, node);
-    });
-    const matches = Array.from(container.querySelectorAll("mark[data-jsonviewer-highlight='true']"));
-    setMatchCount(matches.length);
-    if (matches.length) {
-      const nextIndex = Math.min(activeMatchRef.current, matches.length - 1);
-      const shouldScroll = pendingScrollRef.current;
-      pendingScrollRef.current = false;
-      setActiveMatch(nextIndex, shouldScroll);
-    } else {
-      setActiveMatchIndex(0);
-      activeMatchRef.current = 0;
-    }
-    highlightStateRef.current.applying = false;
-  }, [normalizedQuery, setActiveMatch]);
-
-  React.useEffect(() => {
-    pendingScrollRef.current = true;
-  }, [normalizedQuery]);
-
-  React.useEffect(() => {
-    const container = viewerRef.current;
-    if (!container) {
-      return;
-    }
-    let rafId = 0;
-    const schedule = () => {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-      }
-      rafId = requestAnimationFrame(() => {
-        rafId = 0;
-        applyHighlights();
-      });
-    };
-    schedule();
-    if (!normalizedQuery) {
-      return;
-    }
-    const observer = new MutationObserver(() => {
-      if (highlightStateRef.current.applying) {
-        return;
-      }
-      schedule();
-    });
-    observer.observe(container, { childList: true, subtree: true, characterData: true });
-    return () => {
-      observer.disconnect();
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-      }
-    };
-  }, [normalizedQuery, data, sourceText, segments, applyHighlights]);
 
   return (
     <div className={cn("flex flex-col h-full bg-slate-50", className)}>
@@ -399,7 +143,7 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
                   }
                   return (
                     <div key={part.key}>
-                      {renderLogText(part.content)}
+                      <LogText text={part.content} />
                     </div>
                   );
                 }

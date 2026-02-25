@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { MainLayout } from "./components/layout/MainLayout";
 import { SplitPane } from "./components/ui/SplitPane";
 import { ConfirmDialog } from "./components/ui/ConfirmDialog";
@@ -8,7 +8,7 @@ import { extractJsonWithRanges } from "./utils/jsonExtractor";
 import type { ExtractedJsonSegment, JsonValue } from "./utils/jsonExtractor";
 import { HeaderBar } from "./components/layout/HeaderBar.tsx";
 import { useHistory } from "./hooks/useHistory";
-import { DIRTY_SAMPLES } from "./data/samples";
+import { useSampleLoader } from "./hooks/useSampleLoader";
 
 
 function App() {
@@ -20,7 +20,10 @@ function App() {
   } = useHistory<string>("");
   
   const [isSmartExtract, setIsSmartExtract] = useState<boolean>(true);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const { isConfirmOpen, handleLoadSample, confirmLoadSample, cancelLoadSample } = useSampleLoader(
+    input,
+    setInput
+  );
 
   const { json, error, segments, sourceText } = useMemo(() => {
     if (!input.trim()) {
@@ -56,32 +59,6 @@ function App() {
     }
   };
 
-
-
-  const lastSampleIndexRef = useRef(-1);
-  const loadRandomSample = () => {
-    if (DIRTY_SAMPLES.length === 0) {
-      return;
-    }
-    let nextIndex = 0;
-    if (DIRTY_SAMPLES.length === 1) {
-      nextIndex = 0;
-    } else {
-      do {
-        nextIndex = Math.floor(Math.random() * DIRTY_SAMPLES.length);
-      } while (nextIndex === lastSampleIndexRef.current);
-    }
-    lastSampleIndexRef.current = nextIndex;
-    setInput(DIRTY_SAMPLES[nextIndex], true);
-  };
-  const handleLoadSample = () => {
-    if (input.trim()) {
-      setIsConfirmOpen(true);
-      return;
-    }
-    loadRandomSample();
-  };
-
   return (
     <MainLayout header={<HeaderBar />}>
       <SplitPane
@@ -110,11 +87,8 @@ function App() {
         description="输入框已有内容，是否清空并加载示例？"
         cancelText="取消"
         confirmText="清空并加载"
-        onCancel={() => setIsConfirmOpen(false)}
-        onConfirm={() => {
-          setIsConfirmOpen(false);
-          loadRandomSample();
-        }}
+        onCancel={cancelLoadSample}
+        onConfirm={confirmLoadSample}
       />
     </MainLayout>
   );
