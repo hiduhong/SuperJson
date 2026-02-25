@@ -3,8 +3,8 @@ import { MainLayout } from "./components/layout/MainLayout";
 import { SplitPane } from "./components/ui/SplitPane";
 import { JsonEditor } from "./features/json-parser/JsonEditor";
 import { JsonViewer } from "./features/json-parser/JsonViewer";
-import { extractJson } from "./utils/jsonExtractor";
-import type { JsonValue } from "./utils/jsonExtractor";
+import { extractJsonWithRanges } from "./utils/jsonExtractor";
+import type { ExtractedJsonSegment, JsonValue } from "./utils/jsonExtractor";
 import { HeaderBar } from "./components/layout/HeaderBar.tsx";
 import { useHistory } from "./hooks/useHistory";
 
@@ -40,23 +40,24 @@ function App() {
   
   const [isSmartExtract, setIsSmartExtract] = useState<boolean>(true);
 
-  const { json, error } = useMemo(() => {
+  const { json, error, segments, sourceText } = useMemo(() => {
     if (!input.trim()) {
-      return { json: [], error: null };
+      return { json: [], error: null, segments: [] as ExtractedJsonSegment[], sourceText: "" };
     }
 
     try {
       let parsed: JsonValue[];
       if (isSmartExtract) {
-        parsed = extractJson(input);
+        const result = extractJsonWithRanges(input);
+        return { json: result.values, error: null, segments: result.segments, sourceText: input };
       } else {
         const result = JSON.parse(input);
         parsed = [result];
       }
-      return { json: parsed, error: null };
+      return { json: parsed, error: null, segments: [] as ExtractedJsonSegment[], sourceText: "" };
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
-      return { json: [], error: message };
+      return { json: [], error: message, segments: [] as ExtractedJsonSegment[], sourceText: "" };
     }
   }, [input, isSmartExtract]);
 
@@ -109,7 +110,7 @@ function App() {
           onUndo={undo}
           onRedo={redo}
         />
-        <JsonViewer data={json} error={error} />
+        <JsonViewer data={json} error={error} sourceText={sourceText} segments={segments} />
       </SplitPane>
     </MainLayout>
   );

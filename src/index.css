@@ -4,12 +4,12 @@
 
 @layer base {
   body {
-    @apply bg-zinc-950 text-zinc-100 h-screen w-screen overflow-hidden m-0 font-sans antialiased;
+    @apply bg-slate-50 text-slate-900 h-screen w-screen overflow-hidden m-0 font-sans antialiased;
   }
 }
 
 .gutter {
-  @apply bg-zinc-800 hover:bg-emerald-600 transition-colors duration-200 z-10;
+  @apply bg-slate-200 hover:bg-indigo-300 transition-colors duration-200 z-10;
   background-repeat: no-repeat;
   background-position: 50%;
 }
@@ -26,13 +26,13 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-zinc-900;
+  @apply bg-slate-100;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-zinc-700 rounded-full border-2 border-zinc-900;
+  @apply bg-slate-300 rounded-full border-2 border-slate-100;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-zinc-600;
+  @apply bg-slate-400;
 }

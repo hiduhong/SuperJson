@@ -15,10 +15,10 @@ export const MainLayout = ({
   className,
 }: MainLayoutProps) => {
   return (
-    <div className={cn("flex flex-col h-screen w-screen overflow-hidden bg-zinc-950", className)}>
-      {header && <header className="flex-shrink-0 h-14 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm z-10">{header}</header>}
+    <div className={cn("flex flex-col h-screen w-screen overflow-hidden bg-slate-50", className)}>
+      {header && <header className="flex-shrink-0 h-14 border-b border-slate-200 bg-white/90 backdrop-blur-sm z-10">{header}</header>}
       <div className="flex flex-1 overflow-hidden">
-        {sidebar && <aside className="flex-shrink-0 w-64 border-r border-zinc-800 bg-zinc-900/30 hidden md:block">{sidebar}</aside>}
+        {sidebar && <aside className="flex-shrink-0 w-64 border-r border-slate-200 bg-white/80 hidden md:block">{sidebar}</aside>}
         <main className="flex-1 relative overflow-hidden flex flex-col">
           {children}
         </main>

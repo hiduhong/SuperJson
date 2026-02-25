@@ -1,6 +1,7 @@
 export type JsonValue = string | number | boolean | null | JsonArray | JsonObject;
 export type JsonArray = JsonValue[];
 export type JsonObject = { [key: string]: JsonValue };
+export type ExtractedJsonSegment = { value: JsonValue; start: number; end: number };
 
 /**
  * 递归地将对象中的 JSON 字符串值解析为对象。
@@ -44,38 +45,53 @@ export function deepUnescape(obj: JsonValue): JsonValue {
  * 3. 失败则尝试更宽松的匹配
  */
 export function extractJson(text: string): JsonValue[] {
+  const { values } = extractJsonWithRanges(text);
+  return values;
+}
+
+export function extractJsonWithRanges(text: string): { values: JsonValue[]; segments: ExtractedJsonSegment[] } {
   const trimmed = text.trim();
-  const results: JsonValue[] = [];
-  
-  // 1. 尝试直接解析
+  if (!trimmed) {
+    throw new Error("No JSON structure found.");
+  }
+  const offset = text.length - text.trimStart().length;
   try {
     const parsed = deepUnescape(JSON.parse(trimmed));
-    return [parsed];
+    return {
+      values: [parsed],
+      segments: [{ value: parsed, start: offset, end: offset + trimmed.length }]
+    };
   } catch {
-    // 忽略直接解析错误，尝试提取
+    void 0;
   }
+  const segments = scanJsonSegments(trimmed, offset);
+  if (segments.length > 0) {
+    return {
+      values: segments.map((segment) => segment.value),
+      segments
+    };
+  }
+  throw new Error("No JSON structure found.");
+}
 
-  // 2. 扫描所有可能的 JSON 起始位置
+function scanJsonSegments(text: string, offset: number): ExtractedJsonSegment[] {
+  const segments: ExtractedJsonSegment[] = [];
   let i = 0;
-  while (i < trimmed.length) {
-    const char = trimmed[i];
+  while (i < text.length) {
+    const char = text[i];
     let found = false;
-    
-    // 尝试提取被引号包裹的 JSON 字符串
     if (char === '"') {
-      const end = findStringEnd(trimmed, i);
+      const end = findStringEnd(text, i);
       if (end !== -1) {
-        const candidate = trimmed.substring(i, end + 1);
+        const candidate = text.substring(i, end + 1);
         try {
           const parsed = JSON.parse(candidate);
-          // 只有当解析出来的是字符串，且看起来像 JSON (对象或数组) 时才处理
           if (typeof parsed === 'string') {
              const trimmedParsed = parsed.trim();
              if (trimmedParsed.startsWith('{') || trimmedParsed.startsWith('[')) {
                  const result = deepUnescape(trimmedParsed);
-                 // 确保结果是对象或数组，而不是原样返回的字符串
                  if (typeof result === 'object' && result !== null) {
-                    results.push(result);
+                    segments.push({ value: result, start: offset + i, end: offset + end + 1 });
                     i = end + 1;
                     found = true;
                     continue;
@@ -83,44 +99,38 @@ export function extractJson(text: string): JsonValue[] {
              }
           }
         } catch {
-          // 忽略错误，继续扫描
+          void 0;
         }
       }
     }
 
     if (!found && (char === '{' || char === '[')) {
-      const end = findBalancedClosing(trimmed, i);
+      const end = findBalancedClosing(text, i);
       if (end !== -1) {
-        const candidate = trimmed.substring(i, end + 1);
+        const candidate = text.substring(i, end + 1);
         try {
-          results.push(deepUnescape(JSON.parse(candidate)));
+          const parsed = deepUnescape(JSON.parse(candidate));
+          segments.push({ value: parsed, start: offset + i, end: offset + end + 1 });
           i = end + 1;
           found = true;
           continue;
         } catch {
-           // 尝试处理转义字符 (例如 \" -> ")
            try {
               const unescaped = candidate.replace(/\\"/g, '"');
-              results.push(deepUnescape(JSON.parse(unescaped)));
+              const parsed = deepUnescape(JSON.parse(unescaped));
+              segments.push({ value: parsed, start: offset + i, end: offset + end + 1 });
               i = end + 1;
               found = true;
               continue;
            } catch {
-               // 继续尝试下一个可能
+             void 0;
            }
         }
       }
     }
-    
-    // 如果没有找到 JSON，继续前进
     i++;
   }
-
-  if (results.length > 0) {
-    return results;
-  }
-
-  throw new Error("No JSON structure found.");
+  return segments;
 }
 
 /**
