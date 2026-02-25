@@ -1,11 +1,7 @@
 import { Code2, Github, Settings } from "lucide-react";
 import { Button } from "../ui/Button";
 
-interface HeaderBarProps {
-    onLoadDirtySample?: () => void;
-}
-
-export const HeaderBar = ({ onLoadDirtySample }: HeaderBarProps) => {
+export const HeaderBar = () => {
     return (
         <div className="flex items-center justify-between px-6 h-full w-full">
             <div className="flex items-center space-x-3">
@@ -20,9 +16,6 @@ export const HeaderBar = ({ onLoadDirtySample }: HeaderBarProps) => {
         </span>
             </div>
             <div className="flex items-center space-x-4">
-                <Button variant="ghost" size="sm" onClick={onLoadDirtySample} title="Load Dirty Log Sample">
-                    Dirty Sample
-                </Button>
                 <Button variant="ghost" size="sm">
                     <Github className="w-5 h-5" />
                 </Button>

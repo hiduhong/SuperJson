@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Button } from "../../components/ui/Button";
 import { Trash2, FileJson, Copy, FileCode } from "lucide-react";
 import { cn } from "../../utils/cn";
@@ -27,11 +27,28 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
   className,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showCopied, setShowCopied] = useState(false);
+  const hideTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) {
+        window.clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleCopy = () => {
     if (textareaRef.current) {
       textareaRef.current.select();
       document.execCommand("copy");
+      setShowCopied(true);
+      if (hideTimerRef.current) {
+        window.clearTimeout(hideTimerRef.current);
+      }
+      hideTimerRef.current = window.setTimeout(() => {
+        setShowCopied(false);
+      }, 2200);
     }
   };
 
@@ -99,6 +116,11 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
           onKeyDown={handleKeyDown}
           spellCheck={false}
         />
+        {showCopied ? (
+          <div className="absolute top-3 right-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 shadow-sm">
+            已复制到剪切板
+          </div>
+        ) : null}
       </div>
     </div>
   );
